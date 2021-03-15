@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-oauth2/oauth2/v4"
-	"github.com/go-oauth2/oauth2/v4/manage"
-	"github.com/go-oauth2/oauth2/v4/models"
-	"github.com/go-oauth2/oauth2/v4/store"
+	"github.com/gotosocial/oauth2/v4"
+	"github.com/gotosocial/oauth2/v4/manage"
+	"github.com/gotosocial/oauth2/v4/models"
+	"github.com/gotosocial/oauth2/v4/store"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/go-oauth2/oauth2/v4"
+	"github.com/gotosocial/oauth2/v4"
 )
 
 // NewClientStore create client store

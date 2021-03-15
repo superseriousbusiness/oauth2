@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-oauth2/oauth2/v4"
 	"github.com/google/uuid"
+	"github.com/gotosocial/oauth2/v4"
 )
 
 // NewAccessGenerate create to generate the access token instance

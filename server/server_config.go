@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/go-oauth2/oauth2/v4"
+	"github.com/gotosocial/oauth2/v4"
 )
 
 // SetTokenType token type
@@ -58,7 +58,6 @@ func (s *Server) SetRefreshingScopeHandler(handler RefreshingScopeHandler) {
 func (s *Server) SetRefreshingValidationHandler(handler RefreshingValidationHandler) {
 	s.RefreshingValidationHandler = handler
 }
-
 
 // SetResponseErrorHandler response error handling
 func (s *Server) SetResponseErrorHandler(handler ResponseErrorHandler) {

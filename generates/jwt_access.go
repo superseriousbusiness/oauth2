@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/go-oauth2/oauth2/v4"
-	"github.com/go-oauth2/oauth2/v4/errors"
 	"github.com/google/uuid"
+	"github.com/gotosocial/oauth2/v4"
+	"github.com/gotosocial/oauth2/v4/errors"
 )
 
 // JWTAccessClaims jwt claims
