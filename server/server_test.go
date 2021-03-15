@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -37,11 +38,7 @@ func init() {
 
 func clientStore(domain string) oauth2.ClientStore {
 	clientStore := store.NewClientStore()
-	clientStore.Set(clientID, &models.Client{
-		ID:     clientID,
-		Secret: clientSecret,
-		Domain: domain,
-	})
+	clientStore.Set(context.Background(), clientID, models.New(clientID, clientSecret, domain, ""))
 	return clientStore
 }
 

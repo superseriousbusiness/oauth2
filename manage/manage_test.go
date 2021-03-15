@@ -21,11 +21,7 @@ func TestManager(t *testing.T) {
 		manager.MustTokenStorage(store.NewMemoryTokenStore())
 
 		clientStore := store.NewClientStore()
-		_ = clientStore.Set("1", &models.Client{
-			ID:     "1",
-			Secret: "11",
-			Domain: "http://localhost",
-		})
+		_ = clientStore.Set(ctx, "1", models.New("1", "11", "http://localhost", ""))
 		manager.MapClientStorage(clientStore)
 
 		tgr := &oauth2.TokenGenerateRequest{

@@ -15,10 +15,7 @@ import (
 func TestAccess(t *testing.T) {
 	Convey("Test Access Generate", t, func() {
 		data := &oauth2.GenerateBasic{
-			Client: &models.Client{
-				ID:     "123456",
-				Secret: "123456",
-			},
+			Client: models.New("123456", "123456", "", ""),
 			UserID:   "000000",
 			CreateAt: time.Now(),
 		}
