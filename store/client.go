@@ -9,20 +9,27 @@ import (
 )
 
 // NewClientStore create client store
-func NewClientStore() *ClientStore {
-	return &ClientStore{
+func NewClientStore() ClientStore {
+	return &clientStore{
 		data: make(map[string]oauth2.ClientInfo),
 	}
 }
 
 // ClientStore client information store
-type ClientStore struct {
+type ClientStore interface {
+	GetByID(ctx context.Context, id string) (oauth2.ClientInfo, error)
+	Set(ctx context.Context, id string, cli oauth2.ClientInfo) error
+	Delete(ctx context.Context, id string) error
+}
+
+// ClientStore client information store
+type clientStore struct {
 	sync.RWMutex
 	data map[string]oauth2.ClientInfo
 }
 
 // GetByID according to the ID for the client information
-func (cs *ClientStore) GetByID(ctx context.Context, id string) (oauth2.ClientInfo, error) {
+func (cs *clientStore) GetByID(ctx context.Context, id string) (oauth2.ClientInfo, error) {
 	cs.RLock()
 	defer cs.RUnlock()
 
@@ -33,10 +40,15 @@ func (cs *ClientStore) GetByID(ctx context.Context, id string) (oauth2.ClientInf
 }
 
 // Set set client information
-func (cs *ClientStore) Set(id string, cli oauth2.ClientInfo) (err error) {
+func (cs *clientStore) Set(ctx context.Context, id string, cli oauth2.ClientInfo) error {
 	cs.Lock()
 	defer cs.Unlock()
 
 	cs.data[id] = cli
-	return
+	return nil
+}
+
+func (cs *clientStore) Delete(ctx context.Context, id string) error {
+	cs.data[id] = nil
+	return nil
 }
