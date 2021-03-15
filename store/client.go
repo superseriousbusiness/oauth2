@@ -49,6 +49,6 @@ func (cs *clientStore) Set(ctx context.Context, id string, cli oauth2.ClientInfo
 }
 
 func (cs *clientStore) Delete(ctx context.Context, id string) error {
-	cs.data[id] = nil
+	delete(cs.data, id)
 	return nil
 }
