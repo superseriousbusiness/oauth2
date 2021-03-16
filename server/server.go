@@ -155,6 +155,7 @@ func (s *Server) ValidationAuthorizeRequest(r *http.Request) (*AuthorizeRequest,
 	clientID := r.FormValue("client_id")
 	if !(r.Method == "GET" || r.Method == "POST") ||
 		clientID == "" {
+			fmt.Println(r.Method, clientID, r)
 		return nil, errors.ErrInvalidRequest
 	}
 
