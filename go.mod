@@ -1,4 +1,4 @@
-module github.com/gotosocial/oauth2/v4
+module github.com/superseriousbusiness/oauth2/v4
 
 go 1.13
 

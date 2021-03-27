@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gotosocial/oauth2/v4/models"
-	"github.com/gotosocial/oauth2/v4/store"
+	"github.com/superseriousbusiness/oauth2/v4/models"
+	"github.com/superseriousbusiness/oauth2/v4/store"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

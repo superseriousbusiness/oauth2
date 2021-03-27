@@ -3,9 +3,9 @@
 //     package main
 //     import (
 //         "net/http"
-//         "github.com/gotosocial/oauth2/v4/manage"
-//         "github.com/gotosocial/oauth2/v4/server"
-//         "github.com/gotosocial/oauth2/v4/store"
+//         "github.com/superseriousbusiness/oauth2/v4/manage"
+//         "github.com/superseriousbusiness/oauth2/v4/server"
+//         "github.com/superseriousbusiness/oauth2/v4/store"
 //     )
 //     func main() {
 //         manager := manage.NewDefaultManager()

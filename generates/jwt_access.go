@@ -8,8 +8,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
-	"github.com/gotosocial/oauth2/v4"
-	"github.com/gotosocial/oauth2/v4/errors"
+	"github.com/superseriousbusiness/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4/errors"
 )
 
 // JWTAccessClaims jwt claims

@@ -3,7 +3,7 @@ package oauth2_test
 import (
 	"testing"
 
-	"github.com/gotosocial/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4"
 )
 
 func TestValidatePlain(t *testing.T) {

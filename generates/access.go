@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/gotosocial/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4"
 )
 
 // NewAccessGenerate create to generate the access token instance

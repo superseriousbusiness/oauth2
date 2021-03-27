@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gotosocial/oauth2/v4/errors"
+	"github.com/superseriousbusiness/oauth2/v4/errors"
 )
 
 type (

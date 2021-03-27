@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gotosocial/oauth2/v4"
-	"github.com/gotosocial/oauth2/v4/errors"
+	"github.com/superseriousbusiness/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4/errors"
 )
 
 type (

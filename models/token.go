@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/gotosocial/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4"
 )
 
 // NewToken create to token model instance

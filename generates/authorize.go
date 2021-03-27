@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/gotosocial/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4"
 )
 
 // NewAuthorizeGenerate create to generate the authorize code instance

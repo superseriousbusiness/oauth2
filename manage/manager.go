@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/gotosocial/oauth2/v4"
-	"github.com/gotosocial/oauth2/v4/errors"
-	"github.com/gotosocial/oauth2/v4/generates"
-	"github.com/gotosocial/oauth2/v4/models"
+	"github.com/superseriousbusiness/oauth2/v4"
+	"github.com/superseriousbusiness/oauth2/v4/errors"
+	"github.com/superseriousbusiness/oauth2/v4/generates"
+	"github.com/superseriousbusiness/oauth2/v4/models"
 )
 
 // NewDefaultManager create to default authorization management instance
