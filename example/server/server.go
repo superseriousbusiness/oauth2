@@ -14,12 +14,12 @@ import (
 	"time"
 
 	"github.com/go-session/session"
-	"github.com/superseriousbusiness/oauth2/v4/errors"
-	"github.com/superseriousbusiness/oauth2/v4/generates"
-	"github.com/superseriousbusiness/oauth2/v4/manage"
-	"github.com/superseriousbusiness/oauth2/v4/models"
-	"github.com/superseriousbusiness/oauth2/v4/server"
-	"github.com/superseriousbusiness/oauth2/v4/store"
+	"github.com/superseriousbusiness/oauth2/pkg/errors"
+	"github.com/superseriousbusiness/oauth2/pkg/generates"
+	"github.com/superseriousbusiness/oauth2/pkg/manager"
+	"github.com/superseriousbusiness/oauth2/pkg/models"
+	"github.com/superseriousbusiness/oauth2/pkg/server"
+	"github.com/superseriousbusiness/oauth2/pkg/store"
 )
 
 var (
@@ -43,21 +43,26 @@ func main() {
 	if dumpvar {
 		log.Println("Dumping requests")
 	}
-	manager := manage.NewDefaultManager()
-	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
+	m := manager.NewDefaultManager()
+	m.SetAuthorizeCodeTokenCfg(manager.DefaultAuthorizeCodeTokenCfg())
 
 	// token store
-	manager.MustTokenStorage(store.NewMemoryTokenStore())
+	tokenStore, err := store.NewMemoryTokenStore()
+	if err != nil {
+		panic(err)
+	}
+
+	m.MapTokenStorage(tokenStore)
 
 	// generate jwt access token
 	// manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
-	manager.MapAccessGenerate(generates.NewAccessGenerate())
+	m.MapAccessGenerate(generates.NewAccess())
 
 	clientStore := store.NewClientStore()
 	clientStore.Set(context.Background(), idvar, models.New(idvar, secretvar, domainvar, ""))
-	manager.MapClientStorage(clientStore)
+	m.MapClientStorage(clientStore)
 
-	srv := server.NewServer(server.NewConfig(), manager)
+	srv := server.NewServer(server.NewConfig(), m)
 
 	srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
 		if username == "test" && password == "test" {
@@ -128,7 +133,7 @@ func main() {
 		}
 
 		data := map[string]interface{}{
-			"expires_in": int64(token.GetAccessCreateAt().Add(token.GetAccessExpiresIn()).Sub(time.Now()).Seconds()),
+			"expires_in": int64(time.Until(token.GetAccessCreateAt().Add(token.GetAccessExpiresIn()))),
 			"client_id":  token.GetClientID(),
 			"user_id":    token.GetUserID(),
 		}
@@ -213,7 +218,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	if dumpvar {
 		_ = dumpRequest(os.Stdout, "auth", r) // Ignore the error
 	}
-	store, err := session.Start(nil, w, r)
+	store, err := session.Start(context.Background(), w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
