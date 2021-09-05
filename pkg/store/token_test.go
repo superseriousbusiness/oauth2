@@ -2,137 +2,133 @@ package store_test
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/superseriousbusiness/oauth2/pkg/models"
 	"github.com/superseriousbusiness/oauth2/pkg/store"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestTokenStore(t *testing.T) {
-	Convey("Test memory store", t, func() {
-		store, err := store.NewMemoryTokenStore()
-		So(err, ShouldBeNil)
-		testToken(store)
-	})
-
-	Convey("Test file store", t, func() {
-		os.Remove("data.db")
-
-		store, err := store.NewFileTokenStore("data.db")
-		So(err, ShouldBeNil)
-		testToken(store)
-	})
+type TokenStoreTestSuite struct {
+	StoreTestSuite
+	store store.TokenStore
 }
 
-func testToken(store store.TokenStore) {
-	Convey("Test authorization code store", func() {
-		ctx := context.Background()
-		info := &models.Token{
-			ClientID:      "1",
-			UserID:        "1_1",
-			RedirectURI:   "http://localhost/",
-			Scope:         "all",
-			Code:          "11_11_11",
-			CodeCreateAt:  time.Now(),
-			CodeExpiresIn: time.Second * 5,
-		}
-		err := store.Create(ctx, info)
-		So(err, ShouldBeNil)
+func (suite *TokenStoreTestSuite) SetupTest() {
+	store, err := store.NewMemoryTokenStore()
+	if err != nil {
+		panic(err)
+	}
+	suite.store = store
+}
 
-		cinfo, err := store.GetByCode(ctx, info.Code)
-		So(err, ShouldBeNil)
-		So(cinfo.GetUserID(), ShouldEqual, info.UserID)
+func (suite *TokenStoreTestSuite) TestAuthorizationCodeStore() {
+	ctx := context.Background()
 
-		err = store.RemoveByCode(ctx, info.Code)
-		So(err, ShouldBeNil)
+	token := models.NewToken()
+	token.SetClientID("1")
+	token.SetUserID("1_1")
+	token.SetRedirectURI("http://localhost/")
+	token.SetScope("all")
+	token.SetCode("11_11_11")
+	token.SetCodeCreateAt(time.Now())
+	token.SetCodeExpiresIn(time.Second * 5)
 
-		cinfo, err = store.GetByCode(ctx, info.Code)
-		So(err, ShouldBeNil)
-		So(cinfo, ShouldBeNil)
-	})
+	err := suite.store.Store(ctx, token)
+	suite.Nil(err)
 
-	Convey("Test access token store", func() {
-		ctx := context.Background()
-		info := &models.Token{
-			ClientID:        "1",
-			UserID:          "1_1",
-			RedirectURI:     "http://localhost/",
-			Scope:           "all",
-			Access:          "1_1_1",
-			AccessCreateAt:  time.Now(),
-			AccessExpiresIn: time.Second * 5,
-		}
-		err := store.Create(ctx, info)
-		So(err, ShouldBeNil)
+	cinfo, err := suite.store.GetByCode(ctx, token.GetCode())
+	suite.Nil(err)
+	suite.Equal(cinfo.GetUserID(), token.GetUserID())
 
-		ainfo, err := store.GetByAccess(ctx, info.GetAccess())
-		So(err, ShouldBeNil)
-		So(ainfo.GetUserID(), ShouldEqual, info.GetUserID())
+	err = suite.store.RemoveByCode(ctx, token.GetCode())
+	suite.Nil(err)
 
-		err = store.RemoveByAccess(ctx, info.GetAccess())
-		So(err, ShouldBeNil)
+	cinfo, err = suite.store.GetByCode(ctx, token.GetCode())
+	suite.Nil(err)
+	suite.Nil(cinfo)
+}
 
-		ainfo, err = store.GetByAccess(ctx, info.GetAccess())
-		So(err, ShouldBeNil)
-		So(ainfo, ShouldBeNil)
-	})
+func (suite *TokenStoreTestSuite) TestAccessTokenStore() {
+	ctx := context.Background()
+	token := models.NewToken()
+	token.SetClientID("1")
+	token.SetUserID("1_1")
+	token.SetRedirectURI("http://localhost/")
+	token.SetScope("all")
+	token.SetAccess("11_11_11")
+	token.SetAccessCreateAt(time.Now())
+	token.SetAccessExpiresIn(time.Second * 5)
+	err := suite.store.Store(ctx, token)
+	suite.Nil(err)
 
-	Convey("Test refresh token store", func() {
-		ctx := context.Background()
-		info := &models.Token{
-			ClientID:         "1",
-			UserID:           "1_2",
-			RedirectURI:      "http://localhost/",
-			Scope:            "all",
-			Access:           "1_2_1",
-			AccessCreateAt:   time.Now(),
-			AccessExpiresIn:  time.Second * 5,
-			Refresh:          "1_2_2",
-			RefreshCreateAt:  time.Now(),
-			RefreshExpiresIn: time.Second * 15,
-		}
-		err := store.Create(ctx, info)
-		So(err, ShouldBeNil)
+	ainfo, err := suite.store.GetByAccess(ctx, token.GetAccess())
+	suite.Nil(err)
+	suite.Equal(ainfo.GetUserID(), token.GetUserID())
 
-		rinfo, err := store.GetByRefresh(ctx, info.GetRefresh())
-		So(err, ShouldBeNil)
-		So(rinfo.GetUserID(), ShouldEqual, info.GetUserID())
+	err = suite.store.RemoveByAccess(ctx, token.GetAccess())
+	suite.Nil(err)
 
-		err = store.RemoveByRefresh(ctx, info.GetRefresh())
-		So(err, ShouldBeNil)
+	ainfo, err = suite.store.GetByAccess(ctx, token.GetAccess())
+	suite.Nil(err)
+	suite.Nil(ainfo)
+}
 
-		rinfo, err = store.GetByRefresh(ctx, info.GetRefresh())
-		So(err, ShouldBeNil)
-		So(rinfo, ShouldBeNil)
-	})
+func (suite *TokenStoreTestSuite) TestRefreshTokenStore() {
+	ctx := context.Background()
+	token := models.NewToken()
+	token.SetClientID("1")
+	token.SetUserID("1_2")
+	token.SetRedirectURI("http://localhost/")
+	token.SetScope("all")
+	token.SetAccess("1_2_1")
+	token.SetAccessCreateAt(time.Now())
+	token.SetAccessExpiresIn(time.Second * 5)
+	token.SetRefresh("1_2_2")
+	token.SetRefreshCreateAt(time.Now())
+	token.SetRefreshExpiresIn(time.Second * 15)
 
-	Convey("Test TTL", func() {
-		ctx := context.Background()
-		info := &models.Token{
-			ClientID:         "1",
-			UserID:           "1_1",
-			RedirectURI:      "http://localhost/",
-			Scope:            "all",
-			Access:           "1_3_1",
-			AccessCreateAt:   time.Now(),
-			AccessExpiresIn:  time.Second * 1,
-			Refresh:          "1_3_2",
-			RefreshCreateAt:  time.Now(),
-			RefreshExpiresIn: time.Second * 1,
-		}
-		err := store.Create(ctx, info)
-		So(err, ShouldBeNil)
+	err := suite.store.Store(ctx, token)
+	suite.Nil(err)
 
-		time.Sleep(time.Second * 1)
-		ainfo, err := store.GetByAccess(ctx, info.Access)
-		So(err, ShouldBeNil)
-		So(ainfo, ShouldBeNil)
-		rinfo, err := store.GetByRefresh(ctx, info.Refresh)
-		So(err, ShouldBeNil)
-		So(rinfo, ShouldBeNil)
-	})
+	rinfo, err := suite.store.GetByRefresh(ctx, token.GetRefresh())
+	suite.Nil(err)
+	suite.Equal(rinfo.GetUserID(), token.GetUserID())
+
+	err = suite.store.RemoveByRefresh(ctx, token.GetRefresh())
+	suite.Nil(err)
+
+	rinfo, err = suite.store.GetByRefresh(ctx, token.GetRefresh())
+	suite.Nil(err)
+	suite.Nil(rinfo)
+}
+
+func (suite *TokenStoreTestSuite) TestTimeToLive() {
+	ctx := context.Background()
+	token := models.NewToken()
+	token.SetClientID("1")
+	token.SetUserID("1_2")
+	token.SetRedirectURI("http://localhost/")
+	token.SetScope("all")
+	token.SetAccess("1_2_1")
+	token.SetAccessCreateAt(time.Now())
+	token.SetAccessExpiresIn(time.Second * 5)
+	token.SetRefresh("1_2_2")
+	token.SetRefreshCreateAt(time.Now())
+	token.SetRefreshExpiresIn(time.Second * 1)
+	err := suite.store.Store(ctx, token)
+	suite.Nil(err)
+
+	time.Sleep(time.Second * 1)
+	ainfo, err := suite.store.GetByAccess(ctx, token.GetAccess())
+	suite.Nil(err)
+	suite.Nil(ainfo)
+	rinfo, err := suite.store.GetByRefresh(ctx, token.GetRefresh())
+	suite.Nil(err)
+	suite.Nil(rinfo)
+}
+
+func TestTokenStoreTestSuite(t *testing.T) {
+	suite.Run(t, &TokenStoreTestSuite{})
 }

@@ -27,9 +27,9 @@ func NewConfig() *Config {
 		},
 		AllowedGrantTypes: []models.GrantType{
 			models.GrantTypeAuthorizationCode,
-			models.GrantTypePasswordCredentials,
+			models.GrantTypePassword,
 			models.GrantTypeClientCredentials,
-			models.GrantTypeRefreshing,
+			models.GrantTypeRefreshToken,
 		},
 		AllowedCodeChallengeMethods: []models.CodeChallengeMethod{
 			models.CodeChallengePlain,
@@ -50,4 +50,24 @@ type AuthorizeRequest struct {
 	CodeChallengeMethod models.CodeChallengeMethod
 	AccessTokenExp      time.Duration
 	Request             *http.Request
+}
+
+// SetTokenType token type
+func (s *Server) SetTokenType(tokenType string) {
+	s.config.TokenType = tokenType
+}
+
+// SetAllowGetAccessRequest to allow GET requests for the token
+func (s *Server) SetAllowGetAccessRequest(allow bool) {
+	s.config.AllowGetAccessRequest = allow
+}
+
+// SetAllowedResponseType allow the authorization types
+func (s *Server) SetAllowedResponseType(types ...models.ResponseType) {
+	s.config.AllowedResponseTypes = types
+}
+
+// SetAllowedGrantType allow the grant types
+func (s *Server) SetAllowedGrantType(types ...models.GrantType) {
+	s.config.AllowedGrantTypes = types
 }

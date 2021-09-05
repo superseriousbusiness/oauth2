@@ -4,10 +4,8 @@ import (
 	"time"
 )
 
-// TokenInfo the token information model interface
-type TokenInfo interface {
-	New() TokenInfo
-
+// Token models an OAuth2 token.
+type Token interface {
 	GetClientID() string
 	SetClientID(string)
 	GetUserID() string
@@ -43,182 +41,181 @@ type TokenInfo interface {
 	SetRefreshExpiresIn(time.Duration)
 }
 
-
-// NewToken create to token model instance
-func NewToken() *Token {
-	return &Token{}
+// NewToken returns a new token that can be serialized to JSON.
+func NewToken() Token {
+	return &SerializableToken{}
 }
 
-// Token token model
-type Token struct {
-	ClientID            string        `bson:"ClientID"`
-	UserID              string        `bson:"UserID"`
-	RedirectURI         string        `bson:"RedirectURI"`
-	Scope               string        `bson:"Scope"`
-	Code                string        `bson:"Code"`
-	CodeChallenge       string        `bson:"CodeChallenge"`
-	CodeChallengeMethod string        `bson:"CodeChallengeMethod"`
-	CodeCreateAt        time.Time     `bson:"CodeCreateAt"`
-	CodeExpiresIn       time.Duration `bson:"CodeExpiresIn"`
-	Access              string        `bson:"Access"`
-	AccessCreateAt      time.Time     `bson:"AccessCreateAt"`
-	AccessExpiresIn     time.Duration `bson:"AccessExpiresIn"`
-	Refresh             string        `bson:"Refresh"`
-	RefreshCreateAt     time.Time     `bson:"RefreshCreateAt"`
-	RefreshExpiresIn    time.Duration `bson:"RefreshExpiresIn"`
+// SerializableToken models a token that can be serialized to JSON.
+type SerializableToken struct {
+	ClientID            string        `json:"ClientID,omitempty"`
+	UserID              string        `json:"UserID,omitempty"`
+	RedirectURI         string        `json:"RedirectURI,omitempty"`
+	Scope               string        `json:"Scope,omitempty"`
+	Code                string        `json:"Code,omitempty"`
+	CodeChallenge       string        `json:"CodeChallenge,omitempty"`
+	CodeChallengeMethod string        `json:"CodeChallengeMethod,omitempty"`
+	CodeCreateAt        time.Time     `json:"CodeCreateAt,omitempty"`
+	CodeExpiresIn       time.Duration `json:"CodeExpiresIn,omitempty"`
+	Access              string        `json:"Access,omitempty"`
+	AccessCreateAt      time.Time     `json:"AccessCreateAt,omitempty"`
+	AccessExpiresIn     time.Duration `json:"AccessExpiresIn,omitempty"`
+	Refresh             string        `json:"Refresh,omitempty"`
+	RefreshCreateAt     time.Time     `json:"RefreshCreateAt,omitempty"`
+	RefreshExpiresIn    time.Duration `json:"RefreshExpiresIn,omitempty"`
 }
 
 // New create to token model instance
-func (t *Token) New() TokenInfo {
+func (t *SerializableToken) New() Token {
 	return NewToken()
 }
 
 // GetClientID the client id
-func (t *Token) GetClientID() string {
+func (t *SerializableToken) GetClientID() string {
 	return t.ClientID
 }
 
 // SetClientID the client id
-func (t *Token) SetClientID(clientID string) {
+func (t *SerializableToken) SetClientID(clientID string) {
 	t.ClientID = clientID
 }
 
 // GetUserID the user id
-func (t *Token) GetUserID() string {
+func (t *SerializableToken) GetUserID() string {
 	return t.UserID
 }
 
 // SetUserID the user id
-func (t *Token) SetUserID(userID string) {
+func (t *SerializableToken) SetUserID(userID string) {
 	t.UserID = userID
 }
 
 // GetRedirectURI redirect URI
-func (t *Token) GetRedirectURI() string {
+func (t *SerializableToken) GetRedirectURI() string {
 	return t.RedirectURI
 }
 
 // SetRedirectURI redirect URI
-func (t *Token) SetRedirectURI(redirectURI string) {
+func (t *SerializableToken) SetRedirectURI(redirectURI string) {
 	t.RedirectURI = redirectURI
 }
 
 // GetScope get scope of authorization
-func (t *Token) GetScope() string {
+func (t *SerializableToken) GetScope() string {
 	return t.Scope
 }
 
 // SetScope get scope of authorization
-func (t *Token) SetScope(scope string) {
+func (t *SerializableToken) SetScope(scope string) {
 	t.Scope = scope
 }
 
 // GetCode authorization code
-func (t *Token) GetCode() string {
+func (t *SerializableToken) GetCode() string {
 	return t.Code
 }
 
 // SetCode authorization code
-func (t *Token) SetCode(code string) {
+func (t *SerializableToken) SetCode(code string) {
 	t.Code = code
 }
 
 // GetCodeCreateAt create Time
-func (t *Token) GetCodeCreateAt() time.Time {
+func (t *SerializableToken) GetCodeCreateAt() time.Time {
 	return t.CodeCreateAt
 }
 
 // SetCodeCreateAt create Time
-func (t *Token) SetCodeCreateAt(createAt time.Time) {
+func (t *SerializableToken) SetCodeCreateAt(createAt time.Time) {
 	t.CodeCreateAt = createAt
 }
 
 // GetCodeExpiresIn the lifetime in seconds of the authorization code
-func (t *Token) GetCodeExpiresIn() time.Duration {
+func (t *SerializableToken) GetCodeExpiresIn() time.Duration {
 	return t.CodeExpiresIn
 }
 
 // SetCodeExpiresIn the lifetime in seconds of the authorization code
-func (t *Token) SetCodeExpiresIn(exp time.Duration) {
+func (t *SerializableToken) SetCodeExpiresIn(exp time.Duration) {
 	t.CodeExpiresIn = exp
 }
 
 // GetCodeChallenge challenge code
-func (t *Token) GetCodeChallenge() string {
+func (t *SerializableToken) GetCodeChallenge() string {
 	return t.CodeChallenge
 }
 
 // SetCodeChallenge challenge code
-func (t *Token) SetCodeChallenge(code string) {
+func (t *SerializableToken) SetCodeChallenge(code string) {
 	t.CodeChallenge = code
 }
 
 // GetCodeChallengeMethod challenge method
-func (t *Token) GetCodeChallengeMethod() CodeChallengeMethod {
+func (t *SerializableToken) GetCodeChallengeMethod() CodeChallengeMethod {
 	return CodeChallengeMethod(t.CodeChallengeMethod)
 }
 
 // SetCodeChallengeMethod challenge method
-func (t *Token) SetCodeChallengeMethod(method CodeChallengeMethod) {
+func (t *SerializableToken) SetCodeChallengeMethod(method CodeChallengeMethod) {
 	t.CodeChallengeMethod = string(method)
 }
 
 // GetAccess access Token
-func (t *Token) GetAccess() string {
+func (t *SerializableToken) GetAccess() string {
 	return t.Access
 }
 
 // SetAccess access Token
-func (t *Token) SetAccess(access string) {
+func (t *SerializableToken) SetAccess(access string) {
 	t.Access = access
 }
 
 // GetAccessCreateAt create Time
-func (t *Token) GetAccessCreateAt() time.Time {
+func (t *SerializableToken) GetAccessCreateAt() time.Time {
 	return t.AccessCreateAt
 }
 
 // SetAccessCreateAt create Time
-func (t *Token) SetAccessCreateAt(createAt time.Time) {
+func (t *SerializableToken) SetAccessCreateAt(createAt time.Time) {
 	t.AccessCreateAt = createAt
 }
 
 // GetAccessExpiresIn the lifetime in seconds of the access token
-func (t *Token) GetAccessExpiresIn() time.Duration {
+func (t *SerializableToken) GetAccessExpiresIn() time.Duration {
 	return t.AccessExpiresIn
 }
 
 // SetAccessExpiresIn the lifetime in seconds of the access token
-func (t *Token) SetAccessExpiresIn(exp time.Duration) {
+func (t *SerializableToken) SetAccessExpiresIn(exp time.Duration) {
 	t.AccessExpiresIn = exp
 }
 
 // GetRefresh refresh Token
-func (t *Token) GetRefresh() string {
+func (t *SerializableToken) GetRefresh() string {
 	return t.Refresh
 }
 
 // SetRefresh refresh Token
-func (t *Token) SetRefresh(refresh string) {
+func (t *SerializableToken) SetRefresh(refresh string) {
 	t.Refresh = refresh
 }
 
 // GetRefreshCreateAt create Time
-func (t *Token) GetRefreshCreateAt() time.Time {
+func (t *SerializableToken) GetRefreshCreateAt() time.Time {
 	return t.RefreshCreateAt
 }
 
 // SetRefreshCreateAt create Time
-func (t *Token) SetRefreshCreateAt(createAt time.Time) {
+func (t *SerializableToken) SetRefreshCreateAt(createAt time.Time) {
 	t.RefreshCreateAt = createAt
 }
 
 // GetRefreshExpiresIn the lifetime in seconds of the refresh token
-func (t *Token) GetRefreshExpiresIn() time.Duration {
+func (t *SerializableToken) GetRefreshExpiresIn() time.Duration {
 	return t.RefreshExpiresIn
 }
 
 // SetRefreshExpiresIn the lifetime in seconds of the refresh token
-func (t *Token) SetRefreshExpiresIn(exp time.Duration) {
+func (t *SerializableToken) SetRefreshExpiresIn(exp time.Duration) {
 	t.RefreshExpiresIn = exp
 }

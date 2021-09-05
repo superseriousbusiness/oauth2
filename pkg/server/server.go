@@ -10,30 +10,30 @@ import (
 	"time"
 
 	"github.com/superseriousbusiness/oauth2/pkg/errors"
-	"github.com/superseriousbusiness/oauth2/pkg/manager"
 	"github.com/superseriousbusiness/oauth2/pkg/models"
+	"github.com/superseriousbusiness/oauth2/pkg/token"
 )
 
 // NewDefaultServer create a default authorization server
-func NewDefaultServer(m manager.Manager) *Server {
+func NewDefaultServer(m token.Manager) *Server {
 	return NewServer(NewConfig(), m)
 }
 
 // NewServer create authorization server
-func NewServer(cfg *Config, m manager.Manager) *Server {
+func NewServer(cfg *Config, m token.Manager) *Server {
 	srv := &Server{
-		Config:  cfg,
-		Manager: m,
+		config:  cfg,
+		manager: m,
 	}
 
 	// default handler
-	srv.ClientInfoHandler = ClientBasicHandler
+	srv.clientInfoHandler = ClientInfoHandlerBasicAuth
 
-	srv.UserAuthorizationHandler = func(w http.ResponseWriter, r *http.Request) (string, error) {
+	srv.userAuthHandler = func(w http.ResponseWriter, r *http.Request) (string, error) {
 		return "", errors.ErrAccessDenied
 	}
 
-	srv.PasswordAuthorizationHandler = func(username, password string) (string, error) {
+	srv.passwordAuthHandler = func(username, password string) (string, error) {
 		return "", errors.ErrAccessDenied
 	}
 	return srv
@@ -41,20 +41,20 @@ func NewServer(cfg *Config, m manager.Manager) *Server {
 
 // Server Provide authorization server
 type Server struct {
-	Config                       *Config
-	Manager                      manager.Manager
-	ClientInfoHandler            ClientInfoHandler
-	ClientAuthorizedHandler      ClientAuthorizedHandler
-	ClientScopeHandler           ClientScopeHandler
-	UserAuthorizationHandler     UserAuthorizationHandler
-	PasswordAuthorizationHandler PasswordAuthorizationHandler
-	RefreshingValidationHandler  RefreshingValidationHandler
-	RefreshingScopeHandler       RefreshingScopeHandler
-	ResponseErrorHandler         ResponseErrorHandler
-	InternalErrorHandler         InternalErrorHandler
-	ExtensionFieldsHandler       ExtensionFieldsHandler
-	AccessTokenExpHandler        AccessTokenExpHandler
-	AuthorizeScopeHandler        AuthorizeScopeHandler
+	config                   *Config
+	manager                  token.Manager
+	clientInfoHandler        ClientInfoHandler
+	clientAuthorizedHandler  ClientAuthorizedHandler
+	clientScopeHandler       ClientScopeHandler
+	userAuthHandler          UserAuthorizationHandler
+	passwordAuthHandler      PasswordAuthorizationHandler
+	refreshValidationHandler RefreshingValidationHandler
+	refreshScopeHandler      RefreshingScopeHandler
+	responseErrorHandler     ResponseErrorHandler
+	internalErrorHandler     InternalErrorHandler
+	extensionFieldsHandler   ExtensionFieldsHandler
+	accessTokenExpHandler    AccessTokenExpHandler
+	authorizeScopeHandler    AuthorizeScopeHandler
 }
 
 func (s *Server) redirectError(w http.ResponseWriter, req *AuthorizeRequest, err error) error {
@@ -132,7 +132,7 @@ func (s *Server) GetRedirectURI(req *AuthorizeRequest, data map[string]interface
 
 // CheckResponseType check allows response type
 func (s *Server) CheckResponseType(rt models.ResponseType) bool {
-	for _, art := range s.Config.AllowedResponseTypes {
+	for _, art := range s.config.AllowedResponseTypes {
 		if art == rt {
 			return true
 		}
@@ -142,7 +142,7 @@ func (s *Server) CheckResponseType(rt models.ResponseType) bool {
 
 // CheckCodeChallengeMethod checks for allowed code challenge method
 func (s *Server) CheckCodeChallengeMethod(ccm models.CodeChallengeMethod) bool {
-	for _, c := range s.Config.AllowedCodeChallengeMethods {
+	for _, c := range s.config.AllowedCodeChallengeMethods {
 		if c == ccm {
 			return true
 		}
@@ -167,7 +167,7 @@ func (s *Server) ValidationAuthorizeRequest(r *http.Request) (*AuthorizeRequest,
 	}
 
 	cc := r.FormValue("code_challenge")
-	if cc == "" && s.Config.ForcePKCE {
+	if cc == "" && s.config.ForcePKCE {
 		return nil, errors.ErrCodeChallengeRquired
 	}
 	if cc != "" && (len(cc) < 43 || len(cc) > 128) {
@@ -197,9 +197,9 @@ func (s *Server) ValidationAuthorizeRequest(r *http.Request) (*AuthorizeRequest,
 }
 
 // GetAuthorizeToken get authorization token(code)
-func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (models.TokenInfo, error) {
+func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (models.Token, error) {
 	// check the client allows the grant type
-	if fn := s.ClientAuthorizedHandler; fn != nil {
+	if fn := s.clientAuthorizedHandler; fn != nil {
 		gt := models.GrantTypeAuthorizationCode
 		if req.ResponseType == models.ResponseTypeToken {
 			gt = models.GrantTypeImplicit
@@ -223,7 +223,7 @@ func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (
 	}
 
 	// check the client allows the authorized scope
-	if fn := s.ClientScopeHandler; fn != nil {
+	if fn := s.clientScopeHandler; fn != nil {
 		allowed, err := fn(tgr)
 		if err != nil {
 			return nil, err
@@ -235,11 +235,11 @@ func (s *Server) GetAuthorizeToken(ctx context.Context, req *AuthorizeRequest) (
 	tgr.CodeChallenge = req.CodeChallenge
 	tgr.CodeChallengeMethod = req.CodeChallengeMethod
 
-	return s.Manager.GenerateAuthToken(ctx, req.ResponseType, tgr)
+	return s.manager.GenerateAuthToken(ctx, req.ResponseType, tgr)
 }
 
 // GetAuthorizeData get authorization response data
-func (s *Server) GetAuthorizeData(rt models.ResponseType, ti models.TokenInfo) map[string]interface{} {
+func (s *Server) GetAuthorizeData(rt models.ResponseType, ti models.Token) map[string]interface{} {
 	if rt == models.ResponseTypeCode {
 		return map[string]interface{}{
 			"code": ti.GetCode(),
@@ -258,7 +258,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// user authorization
-	userID, err := s.UserAuthorizationHandler(w, r)
+	userID, err := s.userAuthHandler(w, r)
 	if err != nil {
 		return s.redirectError(w, req, err)
 	} else if userID == "" {
@@ -267,7 +267,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 	req.UserID = userID
 
 	// specify the scope of authorization
-	if fn := s.AuthorizeScopeHandler; fn != nil {
+	if fn := s.authorizeScopeHandler; fn != nil {
 		scope, err := fn(w, r)
 		if err != nil {
 			return err
@@ -277,7 +277,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// specify the expiration time of access token
-	if fn := s.AccessTokenExpHandler; fn != nil {
+	if fn := s.accessTokenExpHandler; fn != nil {
 		exp, err := fn(w, r)
 		if err != nil {
 			return err
@@ -292,7 +292,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 
 	// If the redirect URI is empty, the default domain provided by the client is used.
 	if req.RedirectURI == "" {
-		client, err := s.Manager.GetClient(ctx, req.ClientID)
+		client, err := s.manager.GetClient(ctx, req.ClientID)
 		if err != nil {
 			return err
 		}
@@ -305,7 +305,7 @@ func (s *Server) HandleAuthorizeRequest(w http.ResponseWriter, r *http.Request) 
 // ValidationTokenRequest the token request validation
 func (s *Server) ValidationTokenRequest(r *http.Request) (models.GrantType, *models.TokenGenerateRequest, error) {
 	if v := r.Method; !(v == "POST" ||
-		(s.Config.AllowGetAccessRequest && v == "GET")) {
+		(s.config.AllowGetAccessRequest && v == "GET")) {
 		return "", nil, errors.ErrInvalidRequest
 	}
 
@@ -314,7 +314,7 @@ func (s *Server) ValidationTokenRequest(r *http.Request) (models.GrantType, *mod
 		return "", nil, errors.ErrUnsupportedGrantType
 	}
 
-	clientID, clientSecret, err := s.ClientInfoHandler(r)
+	clientID, clientSecret, err := s.clientInfoHandler(r)
 	if err != nil {
 		return "", nil, err
 	}
@@ -334,17 +334,17 @@ func (s *Server) ValidationTokenRequest(r *http.Request) (models.GrantType, *mod
 			return "", nil, errors.ErrInvalidRequest
 		}
 		tgr.CodeVerifier = r.FormValue("code_verifier")
-		if s.Config.ForcePKCE && tgr.CodeVerifier == "" {
+		if s.config.ForcePKCE && tgr.CodeVerifier == "" {
 			return "", nil, errors.ErrInvalidRequest
 		}
-	case models.GrantTypePasswordCredentials:
+	case models.GrantTypePassword:
 		tgr.Scope = r.FormValue("scope")
 		username, password := r.FormValue("username"), r.FormValue("password")
 		if username == "" || password == "" {
 			return "", nil, errors.ErrInvalidRequest
 		}
 
-		userID, err := s.PasswordAuthorizationHandler(username, password)
+		userID, err := s.passwordAuthHandler(username, password)
 		if err != nil {
 			return "", nil, err
 		} else if userID == "" {
@@ -353,7 +353,7 @@ func (s *Server) ValidationTokenRequest(r *http.Request) (models.GrantType, *mod
 		tgr.UserID = userID
 	case models.GrantTypeClientCredentials:
 		tgr.Scope = r.FormValue("scope")
-	case models.GrantTypeRefreshing:
+	case models.GrantTypeRefreshToken:
 		tgr.Refresh = r.FormValue("refresh_token")
 		tgr.Scope = r.FormValue("scope")
 		if tgr.Refresh == "" {
@@ -365,7 +365,7 @@ func (s *Server) ValidationTokenRequest(r *http.Request) (models.GrantType, *mod
 
 // CheckGrantType check allows grant type
 func (s *Server) CheckGrantType(gt models.GrantType) bool {
-	for _, agt := range s.Config.AllowedGrantTypes {
+	for _, agt := range s.config.AllowedGrantTypes {
 		if agt == gt {
 			return true
 		}
@@ -374,13 +374,13 @@ func (s *Server) CheckGrantType(gt models.GrantType) bool {
 }
 
 // GetAccessToken access token
-func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *models.TokenGenerateRequest) (models.TokenInfo,
+func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *models.TokenGenerateRequest) (models.Token,
 	error) {
 	if allowed := s.CheckGrantType(gt); !allowed {
 		return nil, errors.ErrUnauthorizedClient
 	}
 
-	if fn := s.ClientAuthorizedHandler; fn != nil {
+	if fn := s.clientAuthorizedHandler; fn != nil {
 		allowed, err := fn(tgr.ClientID, gt)
 		if err != nil {
 			return nil, err
@@ -391,7 +391,7 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 
 	switch gt {
 	case models.GrantTypeAuthorizationCode:
-		ti, err := s.Manager.GenerateAccessToken(ctx, gt, tgr)
+		ti, err := s.manager.GenerateAccessToken(ctx, gt, tgr)
 		if err != nil {
 			switch err {
 			case errors.ErrInvalidAuthorizeCode, errors.ErrInvalidCodeChallenge, errors.ErrMissingCodeChallenge:
@@ -403,8 +403,8 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 			}
 		}
 		return ti, nil
-	case models.GrantTypePasswordCredentials, models.GrantTypeClientCredentials:
-		if fn := s.ClientScopeHandler; fn != nil {
+	case models.GrantTypePassword, models.GrantTypeClientCredentials:
+		if fn := s.clientScopeHandler; fn != nil {
 			allowed, err := fn(tgr)
 			if err != nil {
 				return nil, err
@@ -412,11 +412,11 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 				return nil, errors.ErrInvalidScope
 			}
 		}
-		return s.Manager.GenerateAccessToken(ctx, gt, tgr)
-	case models.GrantTypeRefreshing:
+		return s.manager.GenerateAccessToken(ctx, gt, tgr)
+	case models.GrantTypeRefreshToken:
 		// check scope
-		if scopeFn := s.RefreshingScopeHandler; tgr.Scope != "" && scopeFn != nil {
-			rti, err := s.Manager.LoadRefreshToken(ctx, tgr.Refresh)
+		if scopeFn := s.refreshScopeHandler; tgr.Scope != "" && scopeFn != nil {
+			rti, err := s.manager.LoadRefreshToken(ctx, tgr.Refresh)
 			if err != nil {
 				if err == errors.ErrInvalidRefreshToken || err == errors.ErrExpiredRefreshToken {
 					return nil, errors.ErrInvalidGrant
@@ -432,8 +432,8 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 			}
 		}
 
-		if validationFn := s.RefreshingValidationHandler; validationFn != nil {
-			rti, err := s.Manager.LoadRefreshToken(ctx, tgr.Refresh)
+		if validationFn := s.refreshValidationHandler; validationFn != nil {
+			rti, err := s.manager.LoadRefreshToken(ctx, tgr.Refresh)
 			if err != nil {
 				if err == errors.ErrInvalidRefreshToken || err == errors.ErrExpiredRefreshToken {
 					return nil, errors.ErrInvalidGrant
@@ -448,7 +448,7 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 			}
 		}
 
-		ti, err := s.Manager.RefreshAccessToken(ctx, tgr)
+		ti, err := s.manager.RefreshAccessToken(ctx, tgr)
 		if err != nil {
 			if err == errors.ErrInvalidRefreshToken || err == errors.ErrExpiredRefreshToken {
 				return nil, errors.ErrInvalidGrant
@@ -462,10 +462,10 @@ func (s *Server) GetAccessToken(ctx context.Context, gt models.GrantType, tgr *m
 }
 
 // GetTokenData token data
-func (s *Server) GetTokenData(ti models.TokenInfo) map[string]interface{} {
+func (s *Server) GetTokenData(ti models.Token) map[string]interface{} {
 	data := map[string]interface{}{
 		"access_token": ti.GetAccess(),
-		"token_type":   s.Config.TokenType,
+		"token_type":   s.config.TokenType,
 		"expires_in":   int64(ti.GetAccessExpiresIn() / time.Second),
 	}
 
@@ -477,7 +477,7 @@ func (s *Server) GetTokenData(ti models.TokenInfo) map[string]interface{} {
 		data["refresh_token"] = refresh
 	}
 
-	if fn := s.ExtensionFieldsHandler; fn != nil {
+	if fn := s.extensionFieldsHandler; fn != nil {
 		ext := fn(ti)
 		for k, v := range ext {
 			if _, ok := data[k]; ok {
@@ -514,7 +514,7 @@ func (s *Server) GetErrorData(err error) (map[string]interface{}, int, http.Head
 		re.Description = v
 		re.StatusCode = errors.StatusCodes[err]
 	} else {
-		if fn := s.InternalErrorHandler; fn != nil {
+		if fn := s.internalErrorHandler; fn != nil {
 			if v := fn(err); v != nil {
 				re = *v
 			}
@@ -527,7 +527,7 @@ func (s *Server) GetErrorData(err error) (map[string]interface{}, int, http.Head
 		}
 	}
 
-	if fn := s.ResponseErrorHandler; fn != nil {
+	if fn := s.responseErrorHandler; fn != nil {
 		fn(&re)
 	}
 
@@ -573,7 +573,7 @@ func (s *Server) BearerAuth(r *http.Request) (string, bool) {
 
 // ValidationBearerToken validation the bearer tokens
 // https://tools.ietf.org/html/rfc6750
-func (s *Server) ValidationBearerToken(r *http.Request) (models.TokenInfo, error) {
+func (s *Server) ValidationBearerToken(r *http.Request) (models.Token, error) {
 	ctx := r.Context()
 
 	accessToken, ok := s.BearerAuth(r)
@@ -581,5 +581,5 @@ func (s *Server) ValidationBearerToken(r *http.Request) (models.TokenInfo, error
 		return nil, errors.ErrInvalidAccessToken
 	}
 
-	return s.Manager.LoadAccessToken(ctx, accessToken)
+	return s.manager.LoadAccessToken(ctx, accessToken)
 }

@@ -13,7 +13,7 @@ import (
 // TokenStore the token information storage interface
 type TokenStore interface {
 	// create and store the new token information
-	Create(ctx context.Context, info models.TokenInfo) error
+	Store(ctx context.Context, info models.Token) error
 
 	// delete the authorization code
 	RemoveByCode(ctx context.Context, code string) error
@@ -25,13 +25,13 @@ type TokenStore interface {
 	RemoveByRefresh(ctx context.Context, refresh string) error
 
 	// use the authorization code for token information data
-	GetByCode(ctx context.Context, code string) (models.TokenInfo, error)
+	GetByCode(ctx context.Context, code string) (models.Token, error)
 
 	// use the access token for token information data
-	GetByAccess(ctx context.Context, access string) (models.TokenInfo, error)
+	GetByAccess(ctx context.Context, access string) (models.Token, error)
 
 	// use the refresh token for token information data
-	GetByRefresh(ctx context.Context, refresh string) (models.TokenInfo, error)
+	GetByRefresh(ctx context.Context, refresh string) (models.Token, error)
 }
 
 // NewMemoryTokenStore create a token store instance based on memory
@@ -54,7 +54,7 @@ type tokenStore struct {
 }
 
 // Create create and store the new token information
-func (ts *tokenStore) Create(ctx context.Context, info models.TokenInfo) error {
+func (ts *tokenStore) Store(ctx context.Context, info models.Token) error {
 	ct := time.Now()
 	jv, err := json.Marshal(info)
 	if err != nil {
@@ -119,15 +119,15 @@ func (ts *tokenStore) RemoveByRefresh(ctx context.Context, refresh string) error
 	return ts.remove(refresh)
 }
 
-func (ts *tokenStore) getData(key string) (models.TokenInfo, error) {
-	var ti models.TokenInfo
+func (ts *tokenStore) getData(key string) (models.Token, error) {
+	var ti models.Token
 	err := ts.db.View(func(tx *buntdb.Tx) error {
 		jv, err := tx.Get(key)
 		if err != nil {
 			return err
 		}
 
-		var tm models.Token
+		var tm models.SerializableToken
 		err = json.Unmarshal([]byte(jv), &tm)
 		if err != nil {
 			return err
@@ -164,12 +164,12 @@ func (ts *tokenStore) getBasicID(key string) (string, error) {
 }
 
 // GetByCode use the authorization code for token information data
-func (ts *tokenStore) GetByCode(ctx context.Context, code string) (models.TokenInfo, error) {
+func (ts *tokenStore) GetByCode(ctx context.Context, code string) (models.Token, error) {
 	return ts.getData(code)
 }
 
 // GetByAccess use the access token for token information data
-func (ts *tokenStore) GetByAccess(ctx context.Context, access string) (models.TokenInfo, error) {
+func (ts *tokenStore) GetByAccess(ctx context.Context, access string) (models.Token, error) {
 	basicID, err := ts.getBasicID(access)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (ts *tokenStore) GetByAccess(ctx context.Context, access string) (models.To
 }
 
 // GetByRefresh use the refresh token for token information data
-func (ts *tokenStore) GetByRefresh(ctx context.Context, refresh string) (models.TokenInfo, error) {
+func (ts *tokenStore) GetByRefresh(ctx context.Context, refresh string) (models.Token, error) {
 	basicID, err := ts.getBasicID(refresh)
 	if err != nil {
 		return nil, err

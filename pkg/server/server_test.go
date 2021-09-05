@@ -10,16 +10,16 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/superseriousbusiness/oauth2/pkg/errors"
-	"github.com/superseriousbusiness/oauth2/pkg/manager"
 	"github.com/superseriousbusiness/oauth2/pkg/models"
 	"github.com/superseriousbusiness/oauth2/pkg/server"
 	"github.com/superseriousbusiness/oauth2/pkg/store"
+	"github.com/superseriousbusiness/oauth2/pkg/token"
 )
 
 var (
 	srv          *server.Server
 	tsrv         *httptest.Server
-	m      manager.Manager
+	m            token.Manager
 	csrv         *httptest.Server
 	clientID     = "111111"
 	clientSecret = "11111111"
@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-	m = manager.NewDefaultManager()
+	m = token.DefaultManager()
 	tokenStore, err := store.NewMemoryTokenStore()
 	if err != nil {
 		panic(err)
@@ -40,8 +40,8 @@ func init() {
 }
 
 func clientStore(domain string) store.ClientStore {
-	clientStore := store.NewClientStore()
-	clientStore.Set(context.Background(), clientID, models.New(clientID, clientSecret, domain, ""))
+	clientStore := store.InMemClientStore()
+	clientStore.Set(context.Background(), clientID, models.NewClient(clientID, clientSecret, domain, ""))
 	return clientStore
 }
 
@@ -284,7 +284,7 @@ func TestClientCredentials(t *testing.T) {
 	m.MapClientStorage(clientStore(""))
 
 	srv = server.NewDefaultServer(m)
-	srv.SetClientInfoHandler(server.ClientFormHandler)
+	srv.SetClientInfoHandler(server.ClientInfoHandlerForm)
 
 	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
 		t.Log("OAuth 2.0 Error:", err.Error())
@@ -297,7 +297,7 @@ func TestClientCredentials(t *testing.T) {
 
 	srv.SetAllowedGrantType(models.GrantTypeClientCredentials)
 	srv.SetAllowGetAccessRequest(false)
-	srv.SetExtensionFieldsHandler(func(ti models.TokenInfo) (fieldsValue map[string]interface{}) {
+	srv.SetExtensionFieldsHandler(func(ti models.Token) (fieldsValue map[string]interface{}) {
 		fieldsValue = map[string]interface{}{
 			"extension": "param",
 		}

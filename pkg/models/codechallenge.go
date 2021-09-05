@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// CodeChallengeMethod PCKE method
+// CodeChallengeMethod represents the PCKE method. See https://www.oauth.com/oauth2-servers/pkce/authorization-code-exchange/
 type CodeChallengeMethod string
 
 const (

@@ -4,21 +4,27 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/superseriousbusiness/oauth2/pkg/models"
 	"github.com/superseriousbusiness/oauth2/pkg/store"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestClientStore(t *testing.T) {
-	Convey("Test client store", t, func() {
-		clientStore := store.NewClientStore()
+type ClientStoreTestSuite struct {
+	StoreTestSuite
+}
 
-		err := clientStore.Set(context.Background(), "1", models.New("1", "2", "", ""))
-		So(err, ShouldBeNil)
+func (suite *ClientStoreTestSuite) TestInMemClientStore() {
+	clientStore := store.InMemClientStore()
 
-		cli, err := clientStore.GetByID(context.Background(), "1")
-		So(err, ShouldBeNil)
-		So(cli.GetID(), ShouldEqual, "1")
-	})
+	err := clientStore.Set(context.Background(), "1", models.NewClient("1", "2", "", ""))
+	suite.Nil(err)
+
+	cli, err := clientStore.GetByID(context.Background(), "1")
+	suite.Nil(err)
+	suite.NotNil(cli)
+	suite.Equal("1", cli.GetID())
+}
+
+func TestClientStoreTestSuite(t *testing.T) {
+	suite.Run(t, &ClientStoreTestSuite{})
 }

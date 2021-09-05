@@ -18,8 +18,8 @@ require (
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
-	github.com/smartystreets/goconvey v1.6.4
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/buntdb v1.2.6
 	github.com/tidwall/gjson v1.9.0 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect

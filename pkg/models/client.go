@@ -1,6 +1,6 @@
 package models
 
-// Client client model
+// Client represents an oauth2 client.
 type Client interface {
 	GetID() string
 	GetSecret() string
@@ -8,16 +8,10 @@ type Client interface {
 	GetUserID() string
 }
 
-type ClientInfo interface {
-	GetID() string
-	GetSecret() string
-	GetDomain() string
-	GetUserID() string
-}
-
-func New(id string, secret string, domain string, userID string) Client {
+// NewClient returns a new simple client implementation with the given parameters.
+func NewClient(id string, secret string, domain string, userID string) Client {
 	return &simpleClient{
-		id: id,
+		id:     id,
 		secret: secret,
 		domain: domain,
 		userID: userID,
@@ -32,22 +26,18 @@ type simpleClient struct {
 	userID string
 }
 
-// GetID client id
 func (c *simpleClient) GetID() string {
 	return c.id
 }
 
-// GetSecret client secret
 func (c *simpleClient) GetSecret() string {
 	return c.secret
 }
 
-// GetDomain client domain
 func (c *simpleClient) GetDomain() string {
 	return c.domain
 }
 
-// GetUserID user id
 func (c *simpleClient) GetUserID() string {
 	return c.userID
 }

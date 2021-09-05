@@ -8,28 +8,26 @@ import (
 	"github.com/superseriousbusiness/oauth2/pkg/models"
 )
 
-// NewClientStore create client store
-func NewClientStore() ClientStore {
+// InMemClientStore returns a ClientStore that uses a simple in-memory implementation.
+func InMemClientStore() ClientStore {
 	return &clientStore{
-		data: make(map[string]models.ClientInfo),
+		data: make(map[string]models.Client),
 	}
 }
 
-// ClientStore client information store
+// ClientStore represents a storage method for oauth client information.
 type ClientStore interface {
-	GetByID(ctx context.Context, id string) (models.ClientInfo, error)
-	Set(ctx context.Context, id string, cli models.ClientInfo) error
+	GetByID(ctx context.Context, id string) (models.Client, error)
+	Set(ctx context.Context, id string, cli models.Client) error
 	Delete(ctx context.Context, id string) error
 }
 
-// ClientStore client information store
 type clientStore struct {
 	sync.RWMutex
-	data map[string]models.ClientInfo
+	data map[string]models.Client
 }
 
-// GetByID according to the ID for the client information
-func (cs *clientStore) GetByID(ctx context.Context, id string) (models.ClientInfo, error) {
+func (cs *clientStore) GetByID(ctx context.Context, id string) (models.Client, error) {
 	cs.RLock()
 	defer cs.RUnlock()
 
@@ -39,8 +37,7 @@ func (cs *clientStore) GetByID(ctx context.Context, id string) (models.ClientInf
 	return nil, errors.New("not found")
 }
 
-// Set set client information
-func (cs *clientStore) Set(ctx context.Context, id string, cli models.ClientInfo) error {
+func (cs *clientStore) Set(ctx context.Context, id string, cli models.Client) error {
 	cs.Lock()
 	defer cs.Unlock()
 

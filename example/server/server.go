@@ -15,11 +15,11 @@ import (
 
 	"github.com/go-session/session"
 	"github.com/superseriousbusiness/oauth2/pkg/errors"
-	"github.com/superseriousbusiness/oauth2/pkg/generates"
-	"github.com/superseriousbusiness/oauth2/pkg/manager"
+	"github.com/superseriousbusiness/oauth2/pkg/generate"
 	"github.com/superseriousbusiness/oauth2/pkg/models"
 	"github.com/superseriousbusiness/oauth2/pkg/server"
 	"github.com/superseriousbusiness/oauth2/pkg/store"
+	"github.com/superseriousbusiness/oauth2/pkg/token"
 )
 
 var (
@@ -43,8 +43,8 @@ func main() {
 	if dumpvar {
 		log.Println("Dumping requests")
 	}
-	m := manager.NewDefaultManager()
-	m.SetAuthorizeCodeTokenCfg(manager.DefaultAuthorizeCodeTokenCfg())
+	m := token.DefaultManager()
+	m.SetAuthorizeCodeTokenCfg(token.DefaultAuthorizationCodeTokenCfg())
 
 	// token store
 	tokenStore, err := store.NewMemoryTokenStore()
@@ -56,10 +56,10 @@ func main() {
 
 	// generate jwt access token
 	// manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
-	m.MapAccessGenerate(generates.NewAccess())
+	m.MapAccessGenerate(generate.DefaultAccessTokenGenerator())
 
-	clientStore := store.NewClientStore()
-	clientStore.Set(context.Background(), idvar, models.New(idvar, secretvar, domainvar, ""))
+	clientStore := store.InMemClientStore()
+	clientStore.Set(context.Background(), idvar, models.NewClient(idvar, secretvar, domainvar, ""))
 	m.MapClientStorage(clientStore)
 
 	srv := server.NewServer(server.NewConfig(), m)
